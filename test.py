@@ -245,4 +245,10 @@ cmd(b'\x00\x20\x00\x00', 'H') # replies with 00 00
 #  read_packet_length=0x10000
 
 # CMD_READ_DATA=0x10005
+#  -> 0x38 bytes starting with 01 00 00 00 08 00 00 00 00 00 00 00 00 00 00 00
+#  extra status_ok?
+#  <- 0x1000 bytes starting with zeros
+#  -> status_ok
 
+# CMD_SHUTDOWN=0X10007
+#  -> 0x1c bytes (zeros) is_dev_reboot, timeout_ms, async, bootup, dlbit, bNotResetRTCTime, bNotDisconnectUSB
