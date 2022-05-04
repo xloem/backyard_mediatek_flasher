@@ -245,21 +245,24 @@ cmd(b'\x00\x20\x00\x00', 'H') # replies with 00 00
 # CC_STOR_LIFE_CYCLE_CHECK=0x80007
 #  <- status_ok
 
-# CC_GET_PARTITION_TBL_CATA=0x40009
+# CC_GET_PARTITION_TBL_CATA=0x40009 # cata for catagory
 #  <- 64 00 00 00
 #   GPT
 
 # CC_GET_PACKET_LENGTH=0x40007
 #  <- 00 00 20 00 00 00 01 00 
+#  write_packet_length=0x200000
 #  read_packet_length=0x10000
 
 # CMD_READ_DATA=0x10005
-#  -> 0x38 bytes starting with 01 00 00 00 08 00 00 00 00 00 00 00 00 00 00 00
+#  -> 0x38 bytes: 01 00 00 00 08 00 00 00 00 00 00 00 00 00 00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+#     it looks like the size is 16 or 17 bytes in
 #  extra status_ok?
-#  <- 0x1000 bytes starting with zeros
+#  <- 0x10000 bytes starting with zeros
 #  -> status_ok
 
 # CMD_UPLOAD=0x10002
+  # this probably transfers the partition table to the host.
 #  -> "PGPT"
 #  <- status_ok
 #  <- 00 80 00 00 00 00 00 00
@@ -267,7 +270,41 @@ cmd(b'\x00\x20\x00\x00', 'H') # replies with 00 00
 #       probably a 64 bit integer
 #  <- status_ok
 #  <- 0x8000 bytes starting with zeros
-# ...
+#  -> status_ok
+#  <- status_ok
+
+# CC_SET_HOST_INFO=0x20005
+# not supported? 04 00 01 c0
+
+# CC_START_DL_INFO=0x80001
+# <- status_ok
+
+# CMD_UPLOAD=0x10002
+  # this probably transfers the partition table to the host.
+#  -> "SGPT"
+#  <- status_ok
+#  <- 00 42 00 00 00 00 00 00
+#     upload partition length: 0x4200
+#       probably a 64 bit integer
+#  <- status_ok
+#  <- 0x4200 bytes starting with a2 a0 d0 eb e5 b9 33 44 87 c0 68 b6 b7 26 99 c7
+#  -> status_ok
+#  <- status_ok
+
+# CMD_DOWNLOAD=0x10001
+#   <- status_ok
+#   -> "preloader"
+#   -> ac 25 04 00 00 00 00 00 (partition file length)
+#   <- status_ok
+#  for every 0x200000 bytes:
+#   -> status_ok
+#   -> d3 26 00 00 (checksum)
+#   -> 0x425ac bytes starting with 4d 4d 4d 01 38 00 00 00 46 49 4c 45 5f 49 4e 46
+#   <- status_ok
+
+#   <- status_ok
+
+# preloader_backup,recovery len=0x10a33a0, md1img, spmfw, ..
 
 # CMD_SHUTDOWN=0X10007
 #  -> 0x1c bytes (zeros) is_dev_reboot, timeout_ms, async, bootup, dlbit, bNotResetRTCTime, bNotDisconnectUSB
