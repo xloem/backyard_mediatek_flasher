@@ -111,7 +111,7 @@ print(f'hw_code={hex(hw_code)} unk1={hex(unk1)} hw_subcode={hex(hw_subcode)} hw_
 
 # send DA data to boot rom (Download Agent)
 cmd(0xd7)
-cmd(b'\x00\x20\x00\x00') # blocksize = 0x2000, unknown zeros
+cmd(b'\x00\x20\x00\x00') # either block size or address?
 cmd(b'\x00\x03\x8c\x18') # total data size = 0x38c18
 cmd(b'\x00\x00\x01\x00', 'H') # replies with 00 00
 # writes 8192 bytes starting with \377\377\377\352\210\16\0\372\0\0\17 = ff ff ff ea 88 0e 00 fa 00 00 0f e1 c0 10 a0 e3 [log line 359, 0 = 358]
@@ -134,45 +134,47 @@ cmd(b'\x00\x20\x00\x00', 'H') # replies with 00 00
 # doesn't read reply yet
 
 #                             datalen
-# setup environment cmd 0x10100
+# SPECIAL_CMD_SETUP_ENVIRONMENT=0x10100
 # tx: ef ee ee fe 01 00 00 00 04 00 00 00   00 01 01 00
 #     ef ee ee fe 01 00 00 00 14 00 00 00   02 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00
 # rx: ef ee ee fe 01 00 00 00 04 00 00 00   00 00 00 00 status_ok
 
-# setup hw init params cmd=0x10101
+# SPECIAL_CMD_SETUP_HW_INIT_PARAMS=0x10101
 # tx: ef ee ee fe 01 00 00 00 04 00 00 00   01 01 01 00
 #     ef ee ee fe 01 00 00 00 04 00 00 00   00 00 00 00
 # rx: ef ee ee fe 01 00 00 00 04 00 00 00   00 00 00 00 status_ok
 
 # rx: ef ee ee fe 01 00 00 00 04 00 00 00   53 59 4e 43 wait for sync reply
 
-# device ctrl cmd=0x10009 
+# CMD_DEVICE_CTRL=0x10009 
 # tx: ef ee ee fe 01 00 00 00 04 00 00 00   09 00 01 00
 # rx: ef ee ee fe 01 00 00 00 04 00 00 00   00 00 00 00 
 # tx: ef ee ee fe 01 00 00 00 04 00 00 00   11 00 04 00 CC_GET_EXPIRE_DATE=0x40011
 # rx: "                                 "   04 00 01 c0
 #    device ctrl code not support. DA expired date 2099.1.1
 
-# device ctrl cmd=0x10009 
+# CMD_DEVICE_CTRL=0x10009 
 # tx: ef ee ee fe 01 00 00 00 04 00 00 00   09 00 01 00
 # rx: ef ee ee fe 01 00 00 00 04 00 00 00   00 00 00 00 
 # tx: ef ee ee fe 01 00 00 00 04 00 00 00   04 00 02 00 CC_SET_RESET_KEY=0x20004
 # rx: ef ee ee fe 01 00 00 00 04 00 00 00   00 00 00 00 
 #   support does support this conrtol code
 #   send parameters
-# tx: ef ee ee fe 01 00 00 00 04 00 00 00   68 00 00 00 # setting 0x68. default0x0. 1 key[0x560]. 2 key[0x68]
+# tx: ef ee ee fe 01 00 00 00 04 00 00 00   68 00 00 00 # setting 0x68. default0x0. 1 key[0x50]. 2 key[0x68]
 # rx: ef ee ee fe 01 00 00 00 04 00 00 00   00 00 00 00 
 #   status_ok
 
-# CC_SET_BATTERRY_OPT=0x20002 . battery=0x0, usb power=0x1, auto=0x2. 0x2. sent as 4 bytes just like SET_REST_KEY
+# CC_SET_BATTERY_OPT=0x20002 . battery=0x0, usb power=0x1, auto=0x2. 0x2. sent as 4 bytes just like SET_REST_KEY
 
 # CC_SET_CHECKSUM_LEVEL=0x20003.  none=0x0, USB=0x1, storage=0x2, both=0x3. 0x0. 
 
 # CC_GET_CONNECTION_AGENT=0x4000a . a working getting. replies with data after initial 00 00 00 00, length in sync prefix, 9 bytes.
-#       70 72 65 6c 6f 61 64 65 72
+#    <-   "preloader"
 #       then a further status ok.
 #       so basically with getters, the device sends in the third packet, rather than the host.
+# preloader alive. skip initializing external dram
 
+# jump to 2nd DA
 # CMD_BOOT_TO=0x10008 at_address 0x40000000 length=0x4e61c
 #   the address and length are sent as 0x10 bytes, two 64 bit numbers
 #   00 00 00 40 00 00 00 00 1c e6 04 00 00 00 00 00
@@ -180,8 +182,9 @@ cmd(b'\x00\x20\x00\x00', 'H') # replies with 00 00
 #   then a packet is sent with the passed length of 0x04e61c.
 #   it starts with 07 00 00 ea 94 00 00 ea 9a 00 00 ea a0 00 00 ea ...
 
-# device replies with another sync data ef ee ee fe 01 00 00 00 04 00 00 00 53 59 4e 43
+# device sends another sync data ef ee ee fe 01 00 00 00 04 00 00 00 53 59 4e 43
 
+# optional server security check
 # CMD_DEVICE_CTRL=0x10009 CC_SET_ALL_IN_ONE_SIGNATURE=0x2000c
 #  sends a packet with 09 00 01 00
 #  recvs status_ok
@@ -193,11 +196,13 @@ cmd(b'\x00\x20\x00\x00', 'H') # replies with 00 00
 # CC_GET_DEV_FW_SEC_INFO=0x40013
 #  just like CMD_DEVICE_CTRL for the first two exchanges
 #  but as a getter, the device rather than host sends data for the third. it's 0x44 bytes, starting with 00 00 01 00 79 07 5e 07 12 35 3f f0 48 87 e9 1a
+#  second go-around the bytes start with 00 00 01 00 ab d5 8c d5 12 35 3f f0 48 87 e9 1a : the second 4 bytes differ
 
 # unmapping device ctrl code: 0x10f
 # CC_GET_SLA_ENABLED_STATUS=0x40016
 #  it looks like no data is sent either way for this subcommand, just success. i'm looking at a filtered log; it could be missing
 #  or maybe boolean results are returned as simple status codes. status_ok
+## second time around i'm seeing two status_oks. might have glossed over one.
 
 # CC_SET_REMOTE_SEC_POLICY=0x2000b
 # -> 53 4c 41 00
@@ -232,13 +237,17 @@ cmd(b'\x00\x20\x00\x00', 'H') # replies with 00 00
 
 # CC_GET_RANDOM_ID=0x40008
 #  <- fa 84 dd 84 12 35 3f f0 48 87 e9 ..
-#  four 32 bit random values.
+#  four 32 bit values, the same in two runs.
 
 # CC_GET_USB_SPEED=0x4000b 
 #  <- "high-speed"
 
 # CC_STOR_LIFE_CYCLE_CHECK=0x80007
 #  <- status_ok
+
+# CC_GET_PARTITION_TBL_CATA=0x40009
+#  <- 64 00 00 00
+#   GPT
 
 # CC_GET_PACKET_LENGTH=0x40007
 #  <- 00 00 20 00 00 00 01 00 
@@ -249,6 +258,16 @@ cmd(b'\x00\x20\x00\x00', 'H') # replies with 00 00
 #  extra status_ok?
 #  <- 0x1000 bytes starting with zeros
 #  -> status_ok
+
+# CMD_UPLOAD=0x10002
+#  -> "PGPT"
+#  <- status_ok
+#  <- 00 80 00 00 00 00 00 00
+#     upload partition length: 0x8000
+#       probably a 64 bit integer
+#  <- status_ok
+#  <- 0x8000 bytes starting with zeros
+# ...
 
 # CMD_SHUTDOWN=0X10007
 #  -> 0x1c bytes (zeros) is_dev_reboot, timeout_ms, async, bootup, dlbit, bNotResetRTCTime, bNotDisconnectUSB
