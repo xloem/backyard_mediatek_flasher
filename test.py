@@ -9,7 +9,7 @@ if os.path.exists(DEV):
 print(f'Please connect {DEV} .')
 while True:
     try:
-        fd = os.open('/dev/ttyACM0', os.O_RDWR|os.O_NOCTTY)#|os.O_NONBLOCK)
+        fd = os.open(DEV, os.O_RDWR|os.O_NOCTTY)#|os.O_NONBLOCK)
         break
     except FileNotFoundError:
         time.sleep(0.5)
@@ -220,3 +220,29 @@ cmd(b'\x00\x20\x00\x00', 'H') # replies with 00 00
 #       id: 0 0 0
 
 # CC_GET_NOR_INFO=0x40003
+#   <- 0x10 bytes of zeros
+#  nor type=0 size: page=0 available=0
+
+# CC_GET_UFS_INFO=0x40004
+#  <- 0xd0 bytes starting with zeros
+#  ufs type=0 size: lu0=0 lu1=0 lu2=0
+
+# CC_GET_CHIP_ID=0x4000d
+#  <- 88 07 00 8a 00 ca 00 00 00 00 00 00
+
+# CC_GET_RANDOM_ID=0x40008
+#  <- fa 84 dd 84 12 35 3f f0 48 87 e9 ..
+#  four 32 bit random values.
+
+# CC_GET_USB_SPEED=0x4000b 
+#  <- "high-speed"
+
+# CC_STOR_LIFE_CYCLE_CHECK=0x80007
+#  <- status_ok
+
+# CC_GET_PACKET_LENGTH=0x40007
+#  <- 00 00 20 00 00 00 01 00 
+#  read_packet_length=0x10000
+
+# CMD_READ_DATA=0x10005
+
