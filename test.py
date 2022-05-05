@@ -255,8 +255,10 @@ cmd(b'\x00\x20\x00\x00', 'H') # replies with 00 00
 #  read_packet_length=0x10000
 
 # CMD_READ_DATA=0x10005
-#  -> 0x38 bytes: 01 00 00 00 08 00 00 00 00 00 00 00 00 00 00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+#  -> 0x38 bytes: 01 00 00 00 08 00 00 00 00 00 00  00 00 00 00 00 00 10 00  00 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 #     it looks like the size is 16 or 17 bytes in
+#               this operation has 3 parameters: 64bit offset, 64bit length, and region (EMMC_BOOT_1, EMMC_BOOT_2, EMMC_USER)
+#               the captured example operation had an offset of 0, a length of 0x1000, and was for EMMC_USER.
 #  extra status_ok?
 #  <- 0x10000 bytes starting with zeros
 #  -> status_ok
