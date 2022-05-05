@@ -12,25 +12,29 @@ with open('MTK_AllInOne_DA.bin', 'rb') as dabin:
         return data
     str1 = readstr(32) # MTK_DOWNLOAD_AGENT
     print(str1)
-    str2 = readstr(64)
-    print(str2)
+    da_identifier = readstr(64)
+    print(da_identifier)
 
     # unk1 may be the length of unk2
     unk1, unk2 = read('<LL')
     print(hex(unk1), hex(unk2))
 
-    ct = read('<L')
-    print(ct, "records")
+    da_count = read('<L')
+    print(da_count, "download agents")
 
-    for idx in range(ct):
-
-        # these look to be mostly offsets and lengths for each record and its parts
+    for idx in range(da_count):
 
         print(f'index={hex(idx)}')
 
-        dada, hw_code, hw_subcode, hw_ver, sw_ver, unk5, unk6 = read('<HHHHLLL') # 0xdada, 0x7381, 0x00, 0xca00, 0x00, 0x1000, 0x30000
-        print(f'dada={hex(dada)} hw_code={hex(hw_code)} hw_subcode={hex(hw_subcode)} hw_ver={hex(hw_ver)} sw_ver={hex(sw_ver)} unk5={hex(unk5)} unk6={hex(unk6)}')
-        for section in range(10):
-            off, length, unk, startlen, endlen = read('<LLLLL')
+        dada, hw_code, hw_subcode, hw_ver = read('<HHHH') # 0xdada, 0x7381, 0x00, 0xca00
+        print(f'dada={hex(dada)} hw_code={hex(hw_code)} hw_subcode={hex(hw_subcode)} hw_ver={hex(hw_ver)}')
+        # sw_ver (16 bit = 0) and entry_region_index( = 0) may be somewhere here
+        unk4, unk5, unk6, unk7, unk8 = read('<HHHHH') # 00 00 00 00 00 10 00 00 00 00
+
+        load_regions_count = read('<H') # 03 00
+        print(f'unk4={hex(unk4)} unk5={hex(unk5)} unk6={hex(unk6)} unk7={hex(unk7)} unk8={hex(unk8)} regions_count={hex(load_regions_count)}')
+
+        for region in range(10):
+            off, length, start_addr, sig_offset, sig_len = read('<LLLLL')
             if off != 0 or length != 0:
-                print(f' section {section}: off={hex(off)} length={hex(length)} unk={hex(unk)} startlen={hex(startlen)} endlen={hex(endlen)}')
+                print(f' region {region}: off={hex(off)} length={hex(length)} start_addr={hex(start_addr)} sig_offset={hex(sig_offset)} sig_len={hex(sig_len)}')
