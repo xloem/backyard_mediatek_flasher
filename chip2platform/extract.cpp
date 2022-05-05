@@ -17,8 +17,8 @@ void dumptree(tree_t * tree)
     dumpfile << "chip2platform = {" << std::hex << std::setfill('0') << std::endl;
 
     for (auto & item : *tree) {
-        std::cout << "\t0x" << std::setw(4) << item.first << ": " << item.second << "," << std::endl;
-        dumpfile << "\t0x" << std::setw(4) << item.first << ": " << item.second << "," << std::endl;
+        std::cout << "\t0x" << std::setw(4) << item.first << ": 0x" << item.second << "," << std::endl;
+        dumpfile << "\t0x" << std::setw(4) << item.first << ": 0x" << item.second << "," << std::endl;
     }
 
     std::cout << "}" << std::endl;
