@@ -10,14 +10,11 @@ with open('MTK_AllInOne_DA.bin', 'rb') as dabin:
         if len(data) == 1:
             data = data[0]
         return data
-    str1 = readstr(32) # MTK_DOWNLOAD_AGENT
-    print(str1)
-    da_identifier = readstr(64)
-    print(da_identifier)
 
-    # unk1 may be the length of unk2
-    unk1, unk2 = read('<LL')
-    print(hex(unk1), hex(unk2))
+    da_description = readstr(32) # MTK_DOWNLOAD_AGENT
+    da_identifier = readstr(64)
+    info_ver, info_22668899 = read('<LL')
+    print(f'description={da_description} identifier={da_identifier} ver={hex(info_ver)} 22668899={hex(info_22668899)}')
 
     da_count = read('<L')
     print(da_count, "download agents")
