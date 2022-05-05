@@ -27,8 +27,8 @@ with open('MTK_AllInOne_DA.bin', 'rb') as dabin:
         # these look to be mostly offsets and lengths for each record and its parts
 
         # da da 73 81 00 00 00 ca  00 00 00 00 00 10 00 00 
-        dada, unk1, unk2, unk3, unk4, unk5 = read('<HHHHLL')
-        print(f'dada={hex(dada)} unk1={hex(unk1)} unk2={hex(unk2)} unk3={hex(unk3)} unk4={hex(unk4)} unk5={hex(unk5)}')
+        dada, hw_code, hw_subcode, hw_ver, sw_ver, unk5 = read('<HHHHLL')
+        print(f'dada={hex(dada)} hw_code={hex(hw_code)} hw_subcode={hex(hw_subcode)} hw_ver={hex(hw_ver)} sw_ver={hex(sw_ver)} unk5={hex(unk5)}')
         # 00 00 03 00 44 1a 10 00  70 02 00 00 00 00 21 00 
         unk6, offset1, unk7, unk8 = read('<LLLL')
         print(f'unk6={hex(unk6)} offset1={hex(offset1)} unk7={hex(unk7)} unk8={hex(unk8)}')
