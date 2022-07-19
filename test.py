@@ -83,7 +83,11 @@ while not connected:
 connected = True
 
 def cmd(code, fmt=None, expect_echo=True):
-    cmd = bytes([code])
+    if type(code) is bytes:
+        cmd = code
+        code = cmd[0]
+    else:
+        cmd = bytes([code])
     tx(cmd)
     if expect_echo:
         repl = rx(1)
@@ -98,15 +102,29 @@ def cmd(code, fmt=None, expect_echo=True):
         data = data[0]
     return data
 
-# get preloader version
-preloader_version = cmd(0xfe, 'B', expect_echo=False)
-print('Device preloader version:', hex(preloader_version))
+# from http://www.lieberbiber.de/2015/07/04/mediatek-details-partitions-and-preloader/
+CMD_GET_BL_VER        = 0xfe #   Get Preloader version (seems to be always “1”)
+CMD_GET_HW_SW_VER     = 0xfc #   Return hardware subcode, hardware version and software version
+CMD_GET_HW_CODE       = 0xfd #   Return hardware code and status
+CMD_SEND_DA           = 0xd7 #   Send a special “Download Agent” binary to the SoC, signed with a key.
+CMD_JUMP_DA           = 0xd5 #   Set boot mode to DOWNLOAD_BOOT and start execution of the Download Agent sent in the previous step.
+CMD_GET_TARGET_CONFIG = 0xd8 #   Get supported Preloader configuration flags
+CMD_READ16            = 0xa2 #   Read data from the SoC memory (16 bit length parameter)
+CMD_WRITE16           = 0xd2 #   Write data into SoC memory (16 bit length parameter)
+CMD_READ32            = 0xd1 #   Read data from the SoC memory (32 bit length parameter)
+CMD_WRITE32           = 0xd4 #   Write data into SoC memory (32 bit length parameter)
+CMD_PWR_INIT          = 0xc4 #   Initialise the power management controller (effectively a null op because it is already on)
+CMD_PWR_DEINIT        = 0xc5 #   Shut down the power management controller (effectively a null o)
+CMD_PWR_READ16        = 0xc6 #   Read 16 bits of data from the power management controller interface memory
+CMD_PWR_WRITE16       = 0xc7 #   Write 16 bits of data to the power management controller interface memory
 
-# get chip id info
-hw_code, unk1 = cmd(0xfd, 'HH')
-hw_subcode, hw_version, unk2, unk3 = cmd(0xfc, 'HHHH')
+bootloader_version = cmd(CMD_GET_BL_VER, 'B', expect_echo=False)
+print('Device preloader version:', hex(bootloader_version))
+
+hw_code, hw_code_status = cmd(CMD_GET_HW_CODE, 'HH')
+hw_subcode, hw_version, sw_version, hw_sw_ver_status = cmd(CMD_GET_HW_SW_VER, 'HHHH')
 # sw_ver is a 2-byte value, one of the unks.
-print(f'hw_code={hex(hw_code)} unk1={hex(unk1)} hw_subcode={hex(hw_subcode)} hw_version={hex(hw_version)} unk2={hex(unk2)} unk3={hex(unk3)}')
+print(f'hw_code={hex(hw_code)} hw_code_status={hex(hw_code_status)} hw_subcode={hex(hw_subcode)} hw_version={hex(hw_version)} sw_version={hex(sw_version)} hw_sw_ver_status?={hex(hw_sw_ver_status)}')
     # logfile implies all chip names are in flasher binary, chip_mapping.cpp cflashtool_api.cpp
 
 chip2platform = {
